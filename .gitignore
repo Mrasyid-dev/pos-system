@@ -1,0 +1,72 @@
+# Environment files
+.env
+.env.local
+.env*.local
+!.env.example
+!backend/.env.example
+!frontend/.env.local.example
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Backend
+backend/pos-api
+backend/internal/db/*.go
+!backend/internal/db/db.go
+!backend/internal/db/models.go
+
+# Frontend
+frontend/.next
+frontend/out
+frontend/node_modules
+frontend/.env.local
+frontend/.env*.local
+!frontend/.env.local.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# Temporary/Debug files
+*.ps1
+fix-*.sql
+test-*.go
+test-*.ps1
+*-debug.md
+*-fix.md
+*-solution.md
+*-troubleshoot.md
+SOLUSI*.md
+DEBUG*.md
+FIX*.md
+TEST*.md
+SETUP*.md
+INSTALL*.md
+*QUICK*.md
+*PERMANEN*.md
+*SUMMARY*.md
+*PATH*.md
+*RESTART*.md
+*PREVENT*.md
+NOTES.md
