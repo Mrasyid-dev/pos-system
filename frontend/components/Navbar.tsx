@@ -8,12 +8,38 @@ export default function Navbar() {
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
 
-  useEffect(() => {
+  // Function to load user from localStorage
+  const loadUser = () => {
     const userStr = localStorage.getItem('user')
     if (userStr) {
-      setUser(JSON.parse(userStr))
+      try {
+        setUser(JSON.parse(userStr))
+      } catch (e) {
+        console.error('Error parsing user data:', e)
+        setUser(null)
+      }
+    } else {
+      setUser(null)
     }
-  }, [])
+  }
+
+  useEffect(() => {
+    // Load user on mount and whenever pathname changes
+    loadUser()
+
+    // Listen for storage changes (when user logs in from another tab/window)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user') {
+        loadUser()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [pathname]) // Re-run when pathname changes (e.g., after login redirect)
 
   const handleLogout = () => {
     localStorage.removeItem('token')

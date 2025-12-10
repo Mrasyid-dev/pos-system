@@ -17,14 +17,19 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await authApi.login({ username, password })
+      // Trim whitespace from username and password to fix copy-paste issues
+      const trimmedUsername = username.trim()
+      const trimmedPassword = password.trim()
+      
+      const response = await authApi.login({ username: trimmedUsername, password: trimmedPassword })
       localStorage.setItem('token', response.access_token)
       localStorage.setItem('user', JSON.stringify(response.user))
       
+      // Force page reload to ensure Navbar updates with user data
       if (response.user.role === 'admin') {
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       } else {
-        router.push('/pos')
+        window.location.href = '/pos'
       }
     } catch (err: any) {
       console.error('Login error:', err)

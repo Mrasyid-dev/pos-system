@@ -82,7 +82,7 @@ pos-system/
    ```
 
 3. **Access the application**:
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3001
    - Backend API: http://localhost:8080
    - Database: localhost:5432
 
@@ -302,6 +302,16 @@ SERVER_PORT=8080
 SERVER_HOST=0.0.0.0
 ENVIRONMENT=production
 ```
+
+**Frontend**:
+```
+NEXT_PUBLIC_API_URL=https://your-backend-api.com
+```
+
+**Catatan Penting**: 
+- Setelah deploy POS system, URL production akan diberikan oleh platform deployment (contoh: `https://pos-system.vercel.app` atau `https://pos-system.railway.app`)
+- URL ini kemudian perlu di-set sebagai `NEXT_PUBLIC_POS_DEMO_URL` di portfolio untuk link demo
+- Link demo di portfolio bisa diubah kapan saja melalui environment variable tanpa perlu mengubah kode
 
 **Frontend**:
 ```
