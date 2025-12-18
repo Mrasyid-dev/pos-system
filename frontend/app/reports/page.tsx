@@ -7,6 +7,7 @@ import { format, subDays } from 'date-fns'
 import { exportReport, ExportFormat, ReportType, ExportOptions } from '@/lib/reportExport'
 import { fillExcelTemplate, generateExcelWithFormatting, TemplateData } from '@/lib/excelTemplate'
 import { generateTemplateExcel } from '@/lib/generateTemplate'
+import { formatRupiah } from '@/lib/currency'
 
 export default function ReportsPage() {
   const [from, setFrom] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'))
@@ -198,7 +199,7 @@ export default function ReportsPage() {
               <tr key={sale.sale_date}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{sale.sale_date}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{sale.total_transactions}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">${parseFloat(sale.total_revenue).toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{formatRupiah(parseFloat(sale.total_revenue))}</td>
               </tr>
             ))}
           </tbody>
@@ -222,7 +223,7 @@ export default function ReportsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{product.product_name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{product.sku || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{product.total_qty_sold}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">${parseFloat(product.total_revenue).toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{formatRupiah(parseFloat(product.total_revenue))}</td>
               </tr>
             ))}
           </tbody>

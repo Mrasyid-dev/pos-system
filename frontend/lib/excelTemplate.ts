@@ -100,9 +100,9 @@ export async function fillExcelTemplate(
         
         // Replace summary placeholders
         cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_TRANSACTIONS, data.totalTransactions.toString())
-        cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_REVENUE, `$${data.totalRevenue.toFixed(2)}`)
+        cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_REVENUE, `Rp ${data.totalRevenue.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`)
         cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_QUANTITY_SOLD, data.totalQuantitySold.toString())
-        cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_PRODUCTS_REVENUE, `$${data.totalProductsRevenue.toFixed(2)}`)
+        cellValue = cellValue.replace(PLACEHOLDERS.TOTAL_PRODUCTS_REVENUE, `Rp ${data.totalProductsRevenue.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`)
         
         // Handle sales data insertion
         if (cellValue.includes(PLACEHOLDERS.SALES_START_ROW)) {
@@ -115,7 +115,7 @@ export async function fillExcelTemplate(
             newRow.getCell(1).value = sale.date
             newRow.getCell(2).value = sale.transactions
             newRow.getCell(3).value = sale.revenue
-            newRow.getCell(3).numFmt = '$#,##0.00'
+            newRow.getCell(3).numFmt = '"Rp"#,##0'
           })
           
           // Remove the marker row
@@ -134,7 +134,7 @@ export async function fillExcelTemplate(
             newRow.getCell(2).value = product.sku
             newRow.getCell(3).value = product.quantitySold
             newRow.getCell(4).value = product.revenue
-            newRow.getCell(4).numFmt = '$#,##0.00'
+            newRow.getCell(4).numFmt = '"Rp"#,##0'
           })
           
           worksheet.spliceRows(startRowIndex, 1)

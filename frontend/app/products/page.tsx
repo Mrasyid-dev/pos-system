@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productsApi, Product, CreateProductRequest } from '@/lib/products'
+import { formatRupiah } from '@/lib/currency'
 
 export default function ProductsPage() {
   const queryClient = useQueryClient()
@@ -109,7 +110,7 @@ export default function ProductsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{product.sku || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{product.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{product.category_name || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">${parseFloat(product.price).toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{formatRupiah(parseFloat(product.price))}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{product.unit}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <button

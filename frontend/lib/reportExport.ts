@@ -65,13 +65,13 @@ export function exportToCSV(
       const date = sale.sale_date
       const transactions = sale.total_transactions
       const revenue = parseFloat(sale.total_revenue).toFixed(2)
-      csv += `${date},${transactions},$${revenue}\n`
+      csv += `${date},${transactions},Rp ${parseFloat(sale.total_revenue).toLocaleString('id-ID')}\n`
     })
     
     // Summary
     const totalTransactions = salesData.reduce((sum, s) => sum + s.total_transactions, 0)
     const totalRevenue = salesData.reduce((sum, s) => sum + parseFloat(s.total_revenue), 0)
-    csv += `\nTOTAL,${totalTransactions},$${totalRevenue.toFixed(2)}\n`
+    csv += `\nTOTAL,${totalTransactions},Rp ${totalRevenue.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n`
     csv += '\n'
   }
 
@@ -85,13 +85,13 @@ export function exportToCSV(
       const sku = product.sku || '-'
       const qty = product.total_qty_sold
       const revenue = parseFloat(product.total_revenue).toFixed(2)
-      csv += `${name},${sku},${qty},$${revenue}\n`
+      csv += `${name},${sku},${qty},Rp ${parseFloat(product.total_revenue).toLocaleString('id-ID')}\n`
     })
     
     // Summary
     const totalQty = topProductsData.reduce((sum, p) => sum + p.total_qty_sold, 0)
     const totalRevenue = topProductsData.reduce((sum, p) => sum + parseFloat(p.total_revenue), 0)
-    csv += `\nTOTAL,,"${totalQty}",$${totalRevenue.toFixed(2)}\n`
+    csv += `\nTOTAL,,"${totalQty}",Rp ${totalRevenue.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n`
     csv += '\n'
   }
 

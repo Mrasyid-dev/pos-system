@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@/lib/reports'
 import { format, subDays } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { formatRupiah } from '@/lib/currency'
 
 export default function DashboardPage() {
   const to = format(new Date(), 'yyyy-MM-dd')
@@ -36,11 +37,11 @@ export default function DashboardPage() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 text-sm font-medium mb-2">Total Revenue</h3>
-          <p className="text-3xl font-bold">${parseFloat(stats?.total_revenue || '0').toFixed(2)}</p>
+          <p className="text-3xl font-bold">{formatRupiah(parseFloat(stats?.total_revenue || '0'))}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 text-sm font-medium mb-2">Average Sale</h3>
-          <p className="text-3xl font-bold">${parseFloat(stats?.avg_sale_amount || '0').toFixed(2)}</p>
+          <p className="text-3xl font-bold">{formatRupiah(parseFloat(stats?.avg_sale_amount || '0'))}</p>
         </div>
       </div>
 
@@ -92,7 +93,7 @@ export default function DashboardPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{product.product_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sku || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{product.total_qty_sold}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">${parseFloat(product.total_revenue).toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">{formatRupiah(parseFloat(product.total_revenue))}</td>
                 </tr>
               ))}
             </tbody>

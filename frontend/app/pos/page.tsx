@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productsApi, Product } from '@/lib/products'
 import { salesApi, CreateSaleRequest } from '@/lib/sales'
+import { formatRupiah, formatRupiahWithDecimals } from '@/lib/currency'
 
 interface CartItem {
   product: Product
@@ -115,7 +116,7 @@ export default function POSPage() {
                   <div className="font-semibold">{product.name}</div>
                   <div className="text-sm text-gray-600">{product.sku}</div>
                   <div className="text-lg font-bold text-blue-600 mt-2">
-                    ${parseFloat(product.price).toFixed(2)}
+                    {formatRupiah(parseFloat(product.price))}
                   </div>
                 </button>
               ))}
@@ -159,7 +160,7 @@ export default function POSPage() {
                         >
                           +
                         </button>
-                        <span className="ml-auto">${subtotal.toFixed(2)}</span>
+                        <span className="ml-auto">{formatRupiah(subtotal)}</span>
                       </div>
                       <input
                         type="number"
@@ -178,7 +179,7 @@ export default function POSPage() {
             <div className="border-t pt-4">
               <div className="flex justify-between text-xl font-bold mb-4">
                 <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatRupiah(total)}</span>
               </div>
               <button
                 onClick={handleCheckout}
@@ -199,7 +200,7 @@ export default function POSPage() {
             <h2 className="text-2xl font-bold mb-4">Payment</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Total Amount</label>
-              <div className="text-2xl font-bold">${total.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatRupiah(total)}</div>
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Payment Method</label>
@@ -226,7 +227,7 @@ export default function POSPage() {
             </div>
             {paidAmount && parseFloat(paidAmount) >= total && (
               <div className="mb-4 text-green-600 font-semibold">
-                Change: ${(parseFloat(paidAmount) - total).toFixed(2)}
+                Change: {formatRupiah(parseFloat(paidAmount) - total)}
               </div>
             )}
             <div className="flex gap-2">

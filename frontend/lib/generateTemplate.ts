@@ -108,7 +108,7 @@ export async function generateTemplateExcel(): Promise<Blob> {
       right: { style: 'thin' }
     }
     if (Number(cell.col) === 3) {
-      cell.numFmt = '$#,##0.00'
+      cell.numFmt = '"Rp"#,##0'
     }
   })
   currentRow += 2 // Spacing
@@ -172,7 +172,7 @@ export async function generateTemplateExcel(): Promise<Blob> {
       right: { style: 'thin' }
     }
     if (Number(cell.col) === 4) {
-      cell.numFmt = '$#,##0.00'
+      cell.numFmt = '"Rp"#,##0'
     }
   })
 
