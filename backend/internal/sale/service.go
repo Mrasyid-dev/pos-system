@@ -132,6 +132,30 @@ func (s *Service) Create(ctx context.Context, userID int32, req CreateSaleReques
 		return nil, err
 	}
 
+	// Validate stock availability for all items BEFORE creating sale items
+	// This ensures atomicity: if any item has insufficient stock, entire sale is rolled back
+	for _, item := range req.Items {
+		productIDPg := pgtype.Int4{Int32: item.ProductID, Valid: true}
+		
+		// Get current inventory
+		inv, err := qtx.GetInventoryByProduct(ctx, productIDPg)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				// Get product name for better error message
+				product, _ := qtx.GetProductByID(ctx, item.ProductID)
+				return nil, fmt.Errorf("stock not sufficient for product: %s (inventory not found)", product.Name)
+			}
+			return nil, fmt.Errorf("failed to check inventory for product %d: %w", item.ProductID, err)
+		}
+
+		// Check if stock is sufficient
+		if inv.Qty < item.Qty {
+			// Get product name for better error message
+			product, _ := qtx.GetProductByID(ctx, item.ProductID)
+			return nil, fmt.Errorf("stock not sufficient for product: %s (available: %d, requested: %d)", product.Name, inv.Qty, item.Qty)
+		}
+	}
+
 	// Create sale items and update inventory
 	items := make([]SaleItemResponse, len(req.Items))
 	for i, item := range req.Items {

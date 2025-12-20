@@ -19,6 +19,7 @@ export interface CreateProductRequest {
   price: number
   cost_price?: number
   unit?: string
+  initial_stock?: number
 }
 
 export const productsApi = {

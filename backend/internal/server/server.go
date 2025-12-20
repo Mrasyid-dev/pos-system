@@ -2,6 +2,7 @@ package server
 
 import (
 	"pos-system/internal/auth"
+	"pos-system/internal/category"
 	"pos-system/internal/inventory"
 	"pos-system/internal/product"
 	"pos-system/internal/report"
@@ -16,6 +17,7 @@ type Server struct {
 	authHandler     *auth.Handler
 	productHandler  *product.Handler
 	inventoryHandler *inventory.Handler
+	categoryHandler *category.Handler
 	saleHandler     *sale.Handler
 	reportHandler   *report.Handler
 	authService     *auth.Service
@@ -26,6 +28,7 @@ func NewServer(
 	authHandler *auth.Handler,
 	productHandler *product.Handler,
 	inventoryHandler *inventory.Handler,
+	categoryHandler *category.Handler,
 	saleHandler *sale.Handler,
 	reportHandler *report.Handler,
 	authService *auth.Service,
@@ -47,6 +50,7 @@ func NewServer(
 		authHandler:      authHandler,
 		productHandler:   productHandler,
 		inventoryHandler: inventoryHandler,
+		categoryHandler:  categoryHandler,
 		saleHandler:      saleHandler,
 		reportHandler:    reportHandler,
 		authService:      authService,
@@ -76,6 +80,12 @@ func (s *Server) setupRoutes() {
 		protected := v1.Group("")
 		protected.Use(auth.AuthMiddleware(s.authService))
 		{
+			// Categories
+			categories := protected.Group("/categories")
+			{
+				categories.GET("", s.categoryHandler.List)
+			}
+
 			// Products
 			products := protected.Group("/products")
 			{

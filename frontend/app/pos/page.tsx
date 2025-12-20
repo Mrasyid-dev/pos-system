@@ -34,6 +34,10 @@ export default function POSPage() {
       setPaidAmount('')
       alert('Sale completed successfully!')
     },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.error || error?.message || 'Failed to complete sale'
+      alert(`Error: ${errorMessage}`)
+    },
   })
 
   const addToCart = (product: Product) => {

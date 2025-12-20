@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productsApi, Product, CreateProductRequest } from '@/lib/products'
+import { categoriesApi } from '@/lib/categories'
 import { formatRupiah } from '@/lib/currency'
 
 export default function ProductsPage() {
@@ -15,11 +16,18 @@ export default function ProductsPage() {
     price: 0,
     cost_price: 0,
     unit: 'pcs',
+    category_id: undefined,
+    initial_stock: undefined,
   })
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsApi.list(),
+  })
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
   })
 
   const createMutation = useMutation({
@@ -50,7 +58,15 @@ export default function ProductsPage() {
   })
 
   const resetForm = () => {
-    setFormData({ name: '', sku: '', price: 0, cost_price: 0, unit: 'pcs' })
+    setFormData({ 
+      name: '', 
+      sku: '', 
+      price: 0, 
+      cost_price: 0, 
+      unit: 'pcs',
+      category_id: undefined,
+      initial_stock: undefined,
+    })
   }
 
   const handleEdit = (product: Product) => {
@@ -61,6 +77,8 @@ export default function ProductsPage() {
       price: parseFloat(product.price),
       cost_price: product.cost_price ? parseFloat(product.cost_price) : 0,
       unit: product.unit,
+      category_id: product.category_id,
+      initial_stock: undefined, // Don't set initial_stock when editing
     })
     setShowModal(true)
   }
@@ -68,7 +86,9 @@ export default function ProductsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, data: formData })
+      // Remove initial_stock when editing (it's only for creation)
+      const { initial_stock, ...updateData } = formData
+      updateMutation.mutate({ id: editingProduct.id, data: updateData })
     } else {
       createMutation.mutate(formData)
     }
@@ -164,6 +184,24 @@ export default function ProductsPage() {
                 />
               </div>
               <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Category</label>
+                <select
+                  value={formData.category_id || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    category_id: e.target.value ? parseInt(e.target.value) : undefined 
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">-- Select Category --</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Price *</label>
                 <input
                   type="number"
@@ -193,6 +231,26 @@ export default function ProductsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
+              {!editingProduct && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Initial Stock (Optional)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.initial_stock || ''}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      initial_stock: e.target.value ? parseInt(e.target.value) : undefined 
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="Leave empty to skip"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Set initial inventory quantity when creating the product
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2">
                 <button
                   type="button"

@@ -3,6 +3,7 @@ package sale
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,6 +31,13 @@ func (h *Handler) Create(c *gin.Context) {
 
 	sale, err := h.service.Create(c.Request.Context(), userID.(int32), req)
 	if err != nil {
+		// Check if it's a validation error (stock not sufficient, paid amount insufficient)
+		errMsg := err.Error()
+		if errMsg == "paid amount is less than total amount" || 
+		   strings.Contains(errMsg, "stock not sufficient") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

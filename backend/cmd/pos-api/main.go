@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"pos-system/internal/auth"
+	"pos-system/internal/category"
 	"pos-system/internal/config"
 	"pos-system/internal/db"
 	"pos-system/internal/inventory"
@@ -49,8 +50,9 @@ func main() {
 
 	// Initialize services
 	authService := auth.NewService(queries, cfg.JWTSecret)
-	productService := product.NewService(queries)
+	productService := product.NewService(queries, pool)
 	inventoryService := inventory.NewService(queries)
+	categoryService := category.NewService(queries)
 	saleService := sale.NewService(queries, pool)
 	reportService := report.NewService(queries)
 
@@ -58,6 +60,7 @@ func main() {
 	authHandler := auth.NewHandler(authService)
 	productHandler := product.NewHandler(productService)
 	inventoryHandler := inventory.NewHandler(inventoryService)
+	categoryHandler := category.NewHandler(categoryService)
 	saleHandler := sale.NewHandler(saleService)
 	reportHandler := report.NewHandler(reportService)
 
@@ -66,6 +69,7 @@ func main() {
 		authHandler,
 		productHandler,
 		inventoryHandler,
+		categoryHandler,
 		saleHandler,
 		reportHandler,
 		authService,

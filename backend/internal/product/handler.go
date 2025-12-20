@@ -24,6 +24,11 @@ func (h *Handler) Create(c *gin.Context) {
 
 	product, err := h.service.Create(c.Request.Context(), req)
 	if err != nil {
+		// Check if it's a validation error (category not found)
+		if err.Error() == "category not found" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -88,6 +93,11 @@ func (h *Handler) Update(c *gin.Context) {
 
 	product, err := h.service.Update(c.Request.Context(), int32(id), req)
 	if err != nil {
+		// Check if it's a validation error (category not found)
+		if err.Error() == "category not found" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

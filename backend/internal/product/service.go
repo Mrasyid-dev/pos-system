@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"pos-system/internal/db"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // numericToString converts pgtype.Numeric to string
@@ -25,19 +27,21 @@ func numericToString(n pgtype.Numeric) string {
 
 type Service struct {
 	queries *db.Queries
+	db      *pgxpool.Pool
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(queries *db.Queries, db *pgxpool.Pool) *Service {
+	return &Service{queries: queries, db: db}
 }
 
 type CreateProductRequest struct {
-	SKU        string  `json:"sku"`
-	Name       string  `json:"name" binding:"required"`
-	CategoryID *int32  `json:"category_id"`
-	Price      float64 `json:"price" binding:"required"`
-	CostPrice  *float64 `json:"cost_price"`
-	Unit       string  `json:"unit"`
+	SKU         string  `json:"sku"`
+	Name        string  `json:"name" binding:"required"`
+	CategoryID  *int32  `json:"category_id"`
+	Price       float64 `json:"price" binding:"required"`
+	CostPrice   *float64 `json:"cost_price"`
+	Unit        string  `json:"unit"`
+	InitialStock *int32  `json:"initial_stock"`
 }
 
 type UpdateProductRequest struct {
@@ -86,6 +90,14 @@ func (s *Service) Create(ctx context.Context, req CreateProductRequest) (*Produc
 
 	var categoryIDPg pgtype.Int4
 	if req.CategoryID != nil {
+		// Validate that category exists
+		_, err := s.queries.GetCategoryByID(ctx, *req.CategoryID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, errors.New("category not found")
+			}
+			return nil, fmt.Errorf("failed to validate category: %w", err)
+		}
 		categoryIDPg = pgtype.Int4{Int32: *req.CategoryID, Valid: true}
 	}
 
@@ -103,6 +115,63 @@ func (s *Service) Create(ctx context.Context, req CreateProductRequest) (*Produc
 
 	unitPg := pgtype.Text{String: unit, Valid: true}
 
+	// If initial_stock is provided, use transaction to create product and inventory atomically
+	if req.InitialStock != nil && *req.InitialStock > 0 {
+		// Start transaction
+		tx, err := s.db.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start transaction: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		qtx := s.queries.WithTx(tx)
+
+		// Create product
+		product, err := qtx.CreateProduct(ctx, db.CreateProductParams{
+			Sku:        skuPg,
+			Name:       req.Name,
+			CategoryID: categoryIDPg,
+			Price:      pricePg,
+			CostPrice:  costPricePg,
+			Unit:       unitPg,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create product: %w", err)
+		}
+
+		// Create inventory with initial stock
+		productIDPg := pgtype.Int4{Int32: product.ID, Valid: true}
+		_, err = qtx.CreateInventory(ctx, db.CreateInventoryParams{
+			ProductID: productIDPg,
+			Qty:       *req.InitialStock,
+		})
+		if err != nil {
+			// Check if it's a duplicate inventory error (UNIQUE constraint)
+			// Note: This should not happen in normal flow since we're creating a new product,
+			// but we handle it for safety and to provide a clear error message
+			errMsg := err.Error()
+			if strings.Contains(errMsg, "duplicate key") && strings.Contains(errMsg, "inventory_product_id_key") {
+				return nil, errors.New("inventory already exists for this product")
+			}
+			return nil, fmt.Errorf("failed to create inventory: %w", err)
+		}
+
+		// Commit transaction
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+
+		// Fetch product with category name
+		productWithCat, _ := s.queries.GetProductByID(ctx, product.ID)
+		var categoryName *string
+		if productWithCat.CategoryName.Valid {
+			categoryName = &productWithCat.CategoryName.String
+		}
+
+		return s.toResponseFromProduct(&product, categoryName), nil
+	}
+
+	// No initial stock, create product only (backward compatible)
 	product, err := s.queries.CreateProduct(ctx, db.CreateProductParams{
 		Sku:        skuPg,
 		Name:       req.Name,
@@ -115,7 +184,14 @@ func (s *Service) Create(ctx context.Context, req CreateProductRequest) (*Produc
 		return nil, err
 	}
 
-	return s.toResponseFromProduct(&product, nil), nil
+	// Fetch with category name
+	productWithCat, _ := s.queries.GetProductByID(ctx, product.ID)
+	var categoryName *string
+	if productWithCat.CategoryName.Valid {
+		categoryName = &productWithCat.CategoryName.String
+	}
+
+	return s.toResponseFromProduct(&product, categoryName), nil
 }
 
 func (s *Service) GetByID(ctx context.Context, id int32) (*ProductResponse, error) {
@@ -197,6 +273,14 @@ func (s *Service) Update(ctx context.Context, id int32, req UpdateProductRequest
 
 	var categoryIDPg pgtype.Int4
 	if req.CategoryID != nil {
+		// Validate that category exists
+		_, err := s.queries.GetCategoryByID(ctx, *req.CategoryID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, errors.New("category not found")
+			}
+			return nil, fmt.Errorf("failed to validate category: %w", err)
+		}
 		categoryIDPg = pgtype.Int4{Int32: *req.CategoryID, Valid: true}
 	}
 
