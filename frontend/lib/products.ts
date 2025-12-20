@@ -23,8 +23,9 @@ export interface CreateProductRequest {
 }
 
 export const productsApi = {
-  list: async (): Promise<Product[]> => {
-    const response = await api.get('/products')
+  list: async (onlyAvailable?: boolean): Promise<Product[]> => {
+    const url = onlyAvailable ? '/products?only_available=true' : '/products'
+    const response = await api.get(url)
     return response.data
   },
   get: async (id: number): Promise<Product> => {

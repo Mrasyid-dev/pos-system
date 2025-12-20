@@ -84,6 +84,9 @@ func (s *Server) setupRoutes() {
 			categories := protected.Group("/categories")
 			{
 				categories.GET("", s.categoryHandler.List)
+				categories.POST("", auth.AdminOnlyMiddleware(), s.categoryHandler.Create)
+				categories.PUT("/:id", auth.AdminOnlyMiddleware(), s.categoryHandler.Update)
+				categories.DELETE("/:id", auth.AdminOnlyMiddleware(), s.categoryHandler.Delete)
 			}
 
 			// Products

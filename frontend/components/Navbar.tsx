@@ -71,6 +71,16 @@ export default function Navbar() {
                     Dashboard
                   </a>
                   <a
+                    href="/categories"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      pathname === '/categories'
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    Categories
+                  </a>
+                  <a
                     href="/products"
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       pathname === '/products'

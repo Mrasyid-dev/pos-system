@@ -21,8 +21,8 @@ export default function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState('cash')
 
   const { data: products = [] } = useQuery({
-    queryKey: ['products', 'search', searchQuery],
-    queryFn: () => searchQuery ? productsApi.search(searchQuery) : productsApi.list(),
+    queryKey: ['products', 'pos', 'search', searchQuery],
+    queryFn: () => searchQuery ? productsApi.search(searchQuery) : productsApi.list(true), // only_available=true for POS
     enabled: searchQuery.length > 0 || true,
   })
 

@@ -115,64 +115,26 @@ func (s *Service) Create(ctx context.Context, req CreateProductRequest) (*Produc
 
 	unitPg := pgtype.Text{String: unit, Valid: true}
 
-	// If initial_stock is provided, use transaction to create product and inventory atomically
-	if req.InitialStock != nil && *req.InitialStock > 0 {
-		// Start transaction
-		tx, err := s.db.Begin(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to start transaction: %w", err)
-		}
-		defer tx.Rollback(ctx)
-
-		qtx := s.queries.WithTx(tx)
-
-		// Create product
-		product, err := qtx.CreateProduct(ctx, db.CreateProductParams{
-			Sku:        skuPg,
-			Name:       req.Name,
-			CategoryID: categoryIDPg,
-			Price:      pricePg,
-			CostPrice:  costPricePg,
-			Unit:       unitPg,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create product: %w", err)
-		}
-
-		// Create inventory with initial stock
-		productIDPg := pgtype.Int4{Int32: product.ID, Valid: true}
-		_, err = qtx.CreateInventory(ctx, db.CreateInventoryParams{
-			ProductID: productIDPg,
-			Qty:       *req.InitialStock,
-		})
-		if err != nil {
-			// Check if it's a duplicate inventory error (UNIQUE constraint)
-			// Note: This should not happen in normal flow since we're creating a new product,
-			// but we handle it for safety and to provide a clear error message
-			errMsg := err.Error()
-			if strings.Contains(errMsg, "duplicate key") && strings.Contains(errMsg, "inventory_product_id_key") {
-				return nil, errors.New("inventory already exists for this product")
-			}
-			return nil, fmt.Errorf("failed to create inventory: %w", err)
-		}
-
-		// Commit transaction
-		if err := tx.Commit(ctx); err != nil {
-			return nil, fmt.Errorf("failed to commit transaction: %w", err)
-		}
-
-		// Fetch product with category name
-		productWithCat, _ := s.queries.GetProductByID(ctx, product.ID)
-		var categoryName *string
-		if productWithCat.CategoryName.Valid {
-			categoryName = &productWithCat.CategoryName.String
-		}
-
-		return s.toResponseFromProduct(&product, categoryName), nil
+	// ALWAYS create product and inventory in a single transaction
+	// Determine initial qty: use initial_stock if provided, otherwise 0
+	var initialQty int32
+	if req.InitialStock != nil {
+		initialQty = *req.InitialStock
+	} else {
+		initialQty = 0
 	}
 
-	// No initial stock, create product only (backward compatible)
-	product, err := s.queries.CreateProduct(ctx, db.CreateProductParams{
+	// Start transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.queries.WithTx(tx)
+
+	// Create product
+	product, err := qtx.CreateProduct(ctx, db.CreateProductParams{
 		Sku:        skuPg,
 		Name:       req.Name,
 		CategoryID: categoryIDPg,
@@ -181,10 +143,32 @@ func (s *Service) Create(ctx context.Context, req CreateProductRequest) (*Produc
 		Unit:       unitPg,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create product: %w", err)
 	}
 
-	// Fetch with category name
+	// ALWAYS create inventory (qty = 0 if initial_stock not provided)
+	productIDPg := pgtype.Int4{Int32: product.ID, Valid: true}
+	_, err = qtx.CreateInventory(ctx, db.CreateInventoryParams{
+		ProductID: productIDPg,
+		Qty:       initialQty,
+	})
+	if err != nil {
+		// Check if it's a duplicate inventory error (UNIQUE constraint)
+		// Note: This should not happen in normal flow since we're creating a new product,
+		// but we handle it for safety and to provide a clear error message
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "duplicate key") && strings.Contains(errMsg, "inventory_product_id_key") {
+			return nil, errors.New("inventory already exists for this product")
+		}
+		return nil, fmt.Errorf("failed to create inventory: %w", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Fetch product with category name
 	productWithCat, _ := s.queries.GetProductByID(ctx, product.ID)
 	var categoryName *string
 	if productWithCat.CategoryName.Valid {
@@ -211,7 +195,25 @@ func (s *Service) GetByID(ctx context.Context, id int32) (*ProductResponse, erro
 	return s.toResponseFromRow(&product, categoryName), nil
 }
 
-func (s *Service) List(ctx context.Context) ([]ProductResponse, error) {
+func (s *Service) List(ctx context.Context, onlyAvailable bool) ([]ProductResponse, error) {
+	if onlyAvailable {
+		products, err := s.queries.ListProductsWithStock(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		result := make([]ProductResponse, len(products))
+		for i, p := range products {
+			var categoryName *string
+			if p.CategoryName.Valid {
+				categoryName = &p.CategoryName.String
+			}
+			result[i] = *s.toResponseFromRow(&p, categoryName)
+		}
+
+		return result, nil
+	}
+
 	products, err := s.queries.ListProducts(ctx)
 	if err != nil {
 		return nil, err
@@ -376,6 +378,8 @@ func (s *Service) toResponseFromRow(p interface{}, categoryName *string) *Produc
 		return s.toResponseFromGetProductByIDRow(row, categoryName)
 	case *db.ListProductsRow:
 		return s.toResponseFromListProductsRow(row, categoryName)
+	case *db.ListProductsWithStockRow:
+		return s.toResponseFromListProductsWithStockRow(row, categoryName)
 	case *db.SearchProductsRow:
 		return s.toResponseFromSearchProductsRow(row, categoryName)
 	default:
@@ -384,6 +388,51 @@ func (s *Service) toResponseFromRow(p interface{}, categoryName *string) *Produc
 }
 
 func (s *Service) toResponseFromGetProductByIDRow(p *db.GetProductByIDRow, categoryName *string) *ProductResponse {
+	var sku *string
+	if p.Sku.Valid {
+		sku = &p.Sku.String
+	}
+
+	var categoryID *int32
+	if p.CategoryID.Valid {
+		categoryID = &p.CategoryID.Int32
+	}
+
+	var price string
+	if p.Price.Valid {
+		price = numericToString(p.Price)
+	}
+
+	var costPrice *string
+	if p.CostPrice.Valid {
+		cp := numericToString(p.CostPrice)
+		costPrice = &cp
+	}
+
+	var unit string
+	if p.Unit.Valid {
+		unit = p.Unit.String
+	}
+
+	var createdAt string
+	if p.CreatedAt.Valid {
+		createdAt = p.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00")
+	}
+
+	return &ProductResponse{
+		ID:           p.ID,
+		SKU:          sku,
+		Name:         p.Name,
+		CategoryID:   categoryID,
+		CategoryName: categoryName,
+		Price:        price,
+		CostPrice:    costPrice,
+		Unit:         unit,
+		CreatedAt:    createdAt,
+	}
+}
+
+func (s *Service) toResponseFromListProductsWithStockRow(p *db.ListProductsWithStockRow, categoryName *string) *ProductResponse {
 	var sku *string
 	if p.Sku.Valid {
 		sku = &p.Sku.String

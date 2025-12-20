@@ -53,7 +53,10 @@ func (h *Handler) GetByID(c *gin.Context) {
 }
 
 func (h *Handler) List(c *gin.Context) {
-	products, err := h.service.List(c.Request.Context())
+	// Check if only_available query parameter is set
+	onlyAvailable := c.Query("only_available") == "true"
+
+	products, err := h.service.List(c.Request.Context(), onlyAvailable)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

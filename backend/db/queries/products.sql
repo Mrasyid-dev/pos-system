@@ -21,6 +21,14 @@ FROM products p
 LEFT JOIN categories c ON p.category_id = c.id
 ORDER BY p.created_at DESC;
 
+-- name: ListProductsWithStock :many
+SELECT p.*, c.name as category_name
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.id
+INNER JOIN inventory i ON p.id = i.product_id
+WHERE i.qty > 0
+ORDER BY p.created_at DESC;
+
 -- name: SearchProducts :many
 SELECT p.*, c.name as category_name
 FROM products p
