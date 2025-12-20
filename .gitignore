@@ -70,3 +70,10 @@ INSTALL*.md
 *RESTART*.md
 *PREVENT*.md
 NOTES.md
+
+# AI Knowledge Base & Prompt files
+*-ai-context.md
+*-ai-update-*.md
+prompt-*.md
+*KNOWLEDGE*.md
+*CONTEXT*.md
