@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"context"
 	"testing"
+
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -1,7 +1,11 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
 	"fmt"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
