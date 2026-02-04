@@ -18,9 +18,8 @@ go.work
 
 # Backend
 backend/pos-api
-backend/internal/db/*.go
-!backend/internal/db/db.go
-!backend/internal/db/models.go
+# Note: We need to commit sqlc-generated files for deployment
+# If you regenerate with sqlc, commit the changes
 
 # Frontend
 frontend/.next
