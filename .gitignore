@@ -51,18 +51,22 @@ docker-compose.override.yml
 # Temporary/Debug files
 *.ps1
 fix-*.sql
-test-*.go
+test*.go
+test*.sql
 test-*.ps1
+generate*.go
 *-debug.md
 *-fix.md
 *-solution.md
 *-troubleshoot.md
 SOLUSI*.md
 DEBUG*.md
+DEBUG*.sql
 FIX*.md
 TEST*.md
 SETUP*.md
 INSTALL*.md
+VERIFY*.sql
 *QUICK*.md
 *PERMANEN*.md
 *SUMMARY*.md

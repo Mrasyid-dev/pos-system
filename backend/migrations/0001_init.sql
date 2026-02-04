@@ -1,6 +1,12 @@
 -- 0001_init.sql
 -- Initial schema for POS system
 
+-- Create schema if not exists (untuk Supabase custom schema)
+CREATE SCHEMA IF NOT EXISTS "pos-system-db";
+
+-- Set search path to use the custom schema
+SET search_path TO "pos-system-db", public;
+
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,

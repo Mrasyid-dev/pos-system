@@ -30,6 +30,7 @@ services:
       DB_USER: postgres
       DB_PASS: postgres
       DB_NAME: pos_db
+      DB_SCHEMA: pos-system-db
       JWT_SECRET: change_this_secret_key_in_production
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
