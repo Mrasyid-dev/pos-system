@@ -13,6 +13,7 @@ type Config struct {
 	DBPassword     string
 	DBName         string
 	DBSchema       string
+	DBSSLMode      string // New field for flexible SSL configuration
 	JWTSecret      string
 	ServerPort     string
 	ServerHost     string
@@ -27,6 +28,7 @@ func Load() *Config {
 		DBPassword:  getEnv("DB_PASS", "postgres"),
 		DBName:      getEnv("DB_NAME", "pos_db"),
 		DBSchema:    getEnv("DB_SCHEMA", "public"),
+		DBSSLMode:   getEnv("DB_SSL_MODE", ""), // Default to empty to allow fallback logic
 		JWTSecret:   getEnv("JWT_SECRET", "change_this_secret_key_in_production"),
 		ServerPort:  getEnv("SERVER_PORT", "8080"),
 		ServerHost:  getEnv("SERVER_HOST", "0.0.0.0"),
@@ -35,10 +37,15 @@ func Load() *Config {
 }
 
 func (c *Config) GetDSN() string {
-	// Untuk Supabase/production gunakan sslmode=require
-	sslMode := "disable"
-	if c.Environment == "production" || c.DBHost != "localhost" {
-		sslMode = "require"
+	// Determine sslmode
+	sslMode := c.DBSSLMode
+	if sslMode == "" {
+		// Fallback to auto-detection if no specific mode is set
+		// Untuk Supabase/production gunakan sslmode=require
+		sslMode = "disable"
+		if c.Environment == "production" || c.DBHost != "localhost" {
+			sslMode = "require"
+		}
 	}
 	
 	// Tambahkan search_path untuk custom schema
