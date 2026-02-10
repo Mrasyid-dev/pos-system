@@ -1,8 +1,7 @@
 -- 0002_seed.sql
 -- Sample data untuk development dengan mata uang Rupiah (IDR)
 
--- Set search path to use the custom schema
-SET search_path TO "pos-system-db", public;
+
 
 -- Default admin user (password: admin123)
 -- Note: Hash ini untuk development only. Generate yang baru untuk production
